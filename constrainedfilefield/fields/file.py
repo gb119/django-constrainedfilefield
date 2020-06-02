@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+__all__ = ["ConstrainedFileField"]
+
+import os
+
 from django import forms
+from django.conf import settings
 from django.db import models
 from django.template.defaultfilters import filesizeformat
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 
 
 class ConstrainedFileField(models.FileField):
@@ -57,17 +62,27 @@ class ConstrainedFileField(models.FileField):
         if self.max_upload_size and data.size > self.max_upload_size:
             # Ensure no one bypasses the js checker
             raise forms.ValidationError(
-                _('File size exceeds limit: %(current_size)s. Limit is %(max_size)s.') %
-                {'max_size': filesizeformat(self.max_upload_size),
-                 'current_size': filesizeformat(data.size)})
+                _("File size exceeds limit: %(current_size)s. Limit is %(max_size)s.")
+                % {
+                    "max_size": filesizeformat(self.max_upload_size),
+                    "current_size": filesizeformat(data.size),
+                }
+            )
 
         if self.content_types:
             import magic
-            file = data.file
-            uploaded_content_type = getattr(file, 'content_type', '')
 
-            mg = magic.Magic(mime=True)
-            content_type_magic = mg.from_buffer(file.read(self.mime_lookup_length))
+            file = data.file
+            uploaded_content_type = getattr(file, "content_type", "")
+
+            # magic_file_path used only for Windows.
+            magic_file_path = getattr(settings, "MAGIC_FILE_PATH", None)
+            if magic_file_path and os.name == "nt":
+                mg = magic.Magic(mime=True, magic_file=magic_file_path)
+                content_type_magic = mg.from_buffer(file.read(self.mime_lookup_length))
+            else:
+                with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as mgc:
+                    content_type_magic = mgc.id_buffer(file.read(self.mime_lookup_length))
             file.seek(0)
 
             # Prefer mime-type from magic over mime-type from http header
@@ -76,9 +91,9 @@ class ConstrainedFileField(models.FileField):
 
             if uploaded_content_type not in self.content_types:
                 raise forms.ValidationError(
-                    _('Unsupported file type: %(type)s. Allowed types are %(allowed)s.') %
-                    {'type': content_type_magic,
-                     'allowed': self.content_types})
+                    _("Unsupported file type: %(type)s. Allowed types are %(allowed)s.")
+                    % {"type": content_type_magic, "allowed": self.content_types}
+                )
         return data
 
     def formfield(self, **kwargs):
@@ -99,7 +114,8 @@ class ConstrainedFileField(models.FileField):
         formfield = super(ConstrainedFileField, self).formfield(**kwargs)
         if self.js_checker:
             formfield.widget.attrs.update(
-                {'onchange': 'validateFileSize(this, %d);' % (self.max_upload_size,)})
+                {"onchange": "validateFileSize(this, 0, %d);" % (self.max_upload_size,)}
+            )
         return formfield
 
     def deconstruct(self):
@@ -115,7 +131,7 @@ class ConstrainedFileField(models.FileField):
         return name, path, args, kwargs
 
     def __str__(self):
-        if hasattr(self, 'model'):
+        if hasattr(self, "model"):
             return super(ConstrainedFileField).__str__()
         else:
             return self.__class__.__name__

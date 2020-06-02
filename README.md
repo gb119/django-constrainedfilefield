@@ -1,10 +1,12 @@
-[![Python](https://img.shields.io/badge/Python-2.7,3.4,3.5,3.6-blue.svg?style=flat-square)](/)
-[![Django](https://img.shields.io/badge/Django-1.8,1.9,1.10-blue.svg?style=flat-square)](/)
+[![Python](https://img.shields.io/badge/Python-3.5,3.6,3.7,3.8-blue.svg?style=flat-square)](/)
+[![Django](https://img.shields.io/badge/Django-1.11,2.1,2.2-blue.svg?style=flat-square)](/)
 [![License](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg?style=flat-square)](/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/django_constrainedfilefield.svg?style=flat-square)](https://pypi.python.org/pypi/django-constrainedfilefield)
+[![PyPIv](https://img.shields.io/pypi/v/django-constrainedfilefield.svg?style=flat-square)](https://pypi.org/project/django-constrainedfilefield)
+[![PyPIs](https://img.shields.io/pypi/status/django-constrainedfilefield.svg)](https://pypi.org/project/django-constrainedfilefield)
 [![Build Status](https://travis-ci.org/mbourqui/django-constrainedfilefield.svg?branch=master)](https://travis-ci.org/mbourqui/django-constrainedfilefield)
-[![Coverage Status](https://coveralls.io/repos/github/mbourqui/django-constrainedfilefield/badge.svg?branch=develop%2Ftests)](https://coveralls.io/github/mbourqui/django-constrainedfilefield?branch=develop%2Ftests)
-
+[![Coverage Status](https://coveralls.io/repos/github/mbourqui/django-constrainedfilefield/badge.svg)](https://coveralls.io/github/mbourqui/django-constrainedfilefield)
+[![Downloads](https://pepy.tech/badge/django-constrainedfilefield)](https://pepy.tech/project/django-constrainedfilefield)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 # ConstrainedFileField for Django
 
@@ -20,18 +22,31 @@ form field.
 
 
 ## Requirements
-* Python>=2.7
-* Django>=1.8.17
+* [Python][] >= 3.5
+* [Django]>= 1.11.29
 * `python-magic` >= 0.4.2 *iff* you want to check the file type
 
 ## Installation
 
-1. Run `pip install django-constrainedfilefield`.
+### Using PyPI
+1. Run
+   * `pip install django-constrainedfilefield`, or
+   * `pip install django-constrainedfilefield[filetype]` to ensure `python-magic` is installed.
+1. For windows, you must download the dll files and .magic file at https://github.com/pidydx/libmagicwin64 (32-bit version: http://gnuwin32.sourceforge.net/packages/file.htm)), add them to C:\\Windows\\System32 (or to a folder in your PATH), and set MAGIC_FILE_PATH="..." to the path of your .magic file in your settings.py. For more information about the files to download, go to: https://github.com/ahupp/python-magic/blob/43df08c5ed63d7aad839695f311ca1be2eeb1ecb/README.md#dependencies
+
+### Using the source code
+1. Make sure [Pandoc][] is installed
+1. Run `./pypi_packager.sh`
+1. Run `pip install dist/django_constrainedfilefield-x.y.z-[...].wheel`, where `x.y.z` must be replaced by the actual
+   version number and `[...]` depends on your packaging configuration
+1. For windows, you must download the dll files and .magic file at https://github.com/pidydx/libmagicwin64 (32-bit version: http://gnuwin32.sourceforge.net/packages/file.htm)), add them to C:\\Windows\\System32 (or to a folder in your PATH), and set MAGIC_FILE_PATH="..." to the path of your .magic file in your settings.py. For more information about the files to download, go to: https://github.com/ahupp/python-magic/blob/43df08c5ed63d7aad839695f311ca1be2eeb1ecb/README.md#dependencies
 
 ## Usage
 ### Validate single file
 The field can be used in forms or model forms like a normal `FileField`. If a user tries to upload
 a file which is too large or without a valid type, a form validation error will occur.
+
+Note that the validation does not occur on the field itself (on `save()`), but when validated through a form.
 
 #### Creating form from model
 Create a model and add a field of type `ConstrainedFileField`. You can add a maximum size in bytes
@@ -83,12 +98,21 @@ form field. In order to achieve that, you need to
 
 1. Add `constrainedfilefield` to the `INSTALLED_APPS`. This will load the
   javascripts from the static files.
-* Activate this feature by setting `js_checker=True` when instantiating the
+1.  Activate this feature by setting `js_checker=True` when instantiating the
 `ConstrainedFileField`.
-* Include the javascript in the template where the form field is used
+1. Include the javascript in the template where the form field is used
 
-        {% load static %}
-        <script src="{% static 'constrainedfilefield/js/file_checker.js' %}"></script>
+    ```Django
+    {% load static %}
+    <script src="{% static 'constrainedfilefield/js/file_checker.js' %}"></script>
+    ```
+
+
+### Validate single image
+Same as above, using `ConstrainedImageFileField` instead.
+
+The `ConstrainedImageField` offers additional constraints:
+* `[min|max]_upload_[width|height]` to define min/max dimensions, respectively width and height.
 
 
 ## Note on DOS attacks
@@ -112,3 +136,7 @@ connection is abruptly cut before the file finishes uploading. So the recommende
 
 This is a fork of [django-validated-file](https://github.com/kaleidos/django-validated-file) from
 [Kaleidos](https://github.com/kaleidos).
+
+  [python]:     https://www.python.org/             "Python"
+  [django]:     https://www.djangoproject.com/      "Django"
+  [pandoc]:     http://pandoc.org/index.html        "Pandoc"
